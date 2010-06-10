@@ -5,6 +5,8 @@
     <info organisation="Red Hat" module="certificate-gen" />
     <dependencies>
         <dependency org="org.bouncycastle" name="bcprov-jdk16" rev="1.44"/> 
-        <dependency org="org.bouncycastle" name="bcpg-jdk16" rev="1.44"/> 
+        <dependency org="org.bouncycastle" name="bcpg-jdk16"
+        rev="1.44"/>
+	<dependency org="commons-cli" name="commons-cli" rev="1.2"/>
     </dependencies>
 </ivy-module>
