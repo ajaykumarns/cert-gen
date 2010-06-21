@@ -3,8 +3,11 @@
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/lib/scala-compiler.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib/scala-library.jar!/" />
+      <root url="file://$MAVEN_REPOSITORY$/org/bouncycastle/bcpg-jdk16/1.44" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/bouncycastle/bcprov-jdk16/1.44/bcprov-jdk16-1.44.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
+    <jarDirectory url="file://$MAVEN_REPOSITORY$/org/bouncycastle/bcpg-jdk16/1.44" recursive="false" />
   </library>
 </component>

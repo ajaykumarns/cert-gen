@@ -26,7 +26,7 @@
     <orderEntry type="jdk" jdkName="1.6" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" scope="RUNTIME" name="scala-2.8.0.RC1" level="project" />
-    <orderEntry type="module-library" exported="" scope="RUNTIME">
+    <orderEntry type="module-library" scope="RUNTIME">
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../libs/bcpg-jdk16-1.44.jar!/" />
@@ -35,7 +35,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library" exported="" scope="RUNTIME">
+    <orderEntry type="module-library" scope="RUNTIME">
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../libs/bcprov-jdk16-1.44.jar!/" />

@@ -6,7 +6,8 @@ import org.bouncycastle.asn1._
 import org.bouncycastle.jce._
 import java.util.Date
 import scala.collection._
-import  org.bouncycastle.asn1.x509._
+import org.bouncycastle.asn1.x509._
+import javax.security.auth.x500.X500Principal
 case class DateRange(startDate: Date, endDate: Date)
 case class KeyAndCertificate(key: PrivateKey, certificate: X509Certificate)
 case class X509Extn(oid: String, critical: Boolean, asn1Encodable: ASN1Encodable)
@@ -24,15 +25,16 @@ object CertificateGenerationUtils{
     generator
   }
 
-  def createX509Cert(principal: String = createDN(), dtRange: DateRange = currentDateRange,
+  def createX509Cert(principal: X500Principal = new X500Principal(createDN()),
+		     dtRange: DateRange = currentDateRange,
                      pbKey: PublicKey, keyCert: Option[KeyAndCertificate] = None,
-                     extensions: Option[mutable.Buffer[X509Extn]] = None): X509Certificate = {
+                     extensions: Option[Iterable[X509Extn]] = None): X509Certificate = {
 
     val gen = new org.bouncycastle.x509.X509V3CertificateGenerator()
     gen.setSerialNumber(new java.math.BigInteger("" + scala.math.abs(new java.util.Random().nextInt)))
     gen.setNotBefore(dtRange.startDate)
     gen.setNotAfter(dtRange.endDate)
-    gen.setSubjectDN(new X509Principal(principal))
+    gen.setSubjectDN(principal)
     gen.setPublicKey(pbKey)
     gen.setSignatureAlgorithm("SHA1WITHRSA")
 
@@ -42,7 +44,6 @@ object CertificateGenerationUtils{
 		     new KeyUsage( digitalSignature | keyEncipherment | dataEncipherment))
     gen.addExtension(X509Extensions.SubjectKeyIdentifier, false,
 		     new SubjectKeyIdentifierStructure(pbKey))
-    println(extensions.getClass)
     extensions match {
       case Some(exs) => exs.foreach {e:X509Extn => gen.addExtension(e.oid, e.critical, e.asn1Encodable) }; println("extensions size : " + exs.size)
 
@@ -51,17 +52,17 @@ object CertificateGenerationUtils{
     keyCert match {
       case Some(kc) =>
         gen.setIssuerDN(kc.certificate.getSubjectX500Principal)
-      gen.addExtension(X509Extensions.AuthorityKeyIdentifier, false,
+	gen.addExtension(X509Extensions.AuthorityKeyIdentifier, false,
 		       new AuthorityKeyIdentifierStructure(kc.certificate))
-      return gen.generate(kc.key)
+	return gen.generate(kc.key)
       case None =>
-        gen.setIssuerDN(new X509Principal(principal))
-
-      return gen.generate(keyFactory.generateKeyPair.getPrivate)
+        gen.setIssuerDN(principal)
+        return gen.generate(keyFactory.generateKeyPair.getPrivate)
     }
   }
 
-  def createDN(consumerName: String = randomUUID.toString, usrName: String = randomUUID.toString,
+
+ def createDN(consumerName: String = randomUUID.toString, usrName: String = randomUUID.toString,
                uuid: String = randomUUID.toString) =
     String.format("CN=%s, UID=%s, OU=%s", consumerName, usrName, uuid)
 
@@ -111,19 +112,19 @@ object CertificateGenerationUtils{
   }
 
   trait CertificateEntity{
-    def fields: List[Symbol]
+    def fields: scala.collection.IndexedSeq[Symbol]
   }
 
-  class GenericCertificateEntity(val certType: Symbol, var namespace: String)
+  class GenericCertificateEntity(val symbol: Symbol, var namespace: String)
           extends CertificateEntity{
-    def this(certType: Symbol) = this(certType, null)
-    override val fields = GenericCertificateEntity.certificateFieldsMap(certType).toList
+    def this(symbol: Symbol) = this(symbol, null)
+    override val fields:scala.collection.IndexedSeq[Symbol] = GenericCertificateEntity.certificateFieldsMap(symbol)
     private val map: mutable.Map[Symbol, String] = new mutable.HashMap
     def \ (str: Symbol): Option[String] =
       if(map.contains(str)) Some(map(str)) else None
     def update(sym: Symbol, str: String):Unit = map.put(sym, str)
 
-    override def toString = String.format("[%s] namespace=%s | values = %s", certType, namespace, map.mkString("\n"))
+    override def toString = String.format("[%s] namespace=%s | values = %s", symbol, namespace, map.mkString("\n"))
   }
 
   object GenericCertificateEntity {
@@ -159,11 +160,11 @@ object CertificateGenerationUtils{
       def extend(extension: String) = str + "." + extension
     }
 
-    def toExtensions(entity: GenericCertificateEntity, sym: Symbol): Iterable[X509Extn] = {
+    def toExtensions(entity: GenericCertificateEntity): Iterable[X509Extn] = {
       val extensions: mutable.Buffer[X509Extn] = new mutable.ArrayBuffer
-      if (!certificateToFieldEntityMap.contains(sym))
-        throw new RuntimeException("Cannot translate entity " + sym + " to extensions")
-      certificateToFieldEntityMap(sym).foreach {
+      if (!certificateToFieldEntityMap.contains(entity.symbol))
+        throw new RuntimeException("Cannot translate entity " + entity.symbol + " to extensions")
+      certificateToFieldEntityMap(entity.symbol).foreach {
         case (symb: Symbol, index: Int) =>
           entity \ symb match {
             case Some(value) => extensions += X509Extn(entity.namespace.extend(index), false, value)
@@ -179,11 +180,11 @@ object CertificateGenerationUtils{
       case None => None
     }
     def apply(symb: Symbol, node: TrieNode): GenericCertificateEntity = {
-      println(node)
+      //println(node)
       def setFields(entity: GenericCertificateEntity) = {
-        val fields: Map[Int, Symbol] = certificateToFieldEntityMapRev(orderEntity)
+        val fields: Map[Int, Symbol] = certificateToFieldEntityMapRev(entity.symbol)
         for( (pos, node) <- node.children.getOrElse({new mutable.HashMap[String, TrieNode]})){
-          println(pos + "." + node)
+          //println(pos + "." + node)
           entity(fields(pos.trim - 1)) = new String(node.value)
         }
         entity
@@ -203,11 +204,11 @@ object CertificateGenerationUtils{
         case _ => throw new RuntimeException("Unknown entity :" + symb)
       }
     }
-    def toExtensions(entities: Iterable[GenericCertificateEntity], sym: Symbol): Iterable[X509Extn] = entities.flatMap(toExtensions(_, sym))
-
+    def toExtensions(entities: Iterable[GenericCertificateEntity]): Iterable[X509Extn] = entities.flatMap(toExtensions)
+    
   }
 
-  class Certificate{
+  @scala.reflect.BeanInfo class Certificate{
     import ExtensionSupport._
     val contents:mutable.Buffer[GenericCertificateEntity] = new mutable.ArrayBuffer
     val roles: mutable.Buffer[GenericCertificateEntity] = new mutable.ArrayBuffer
@@ -217,41 +218,8 @@ object CertificateGenerationUtils{
     var startDate = new Date()
     var endDate = (new Date()).oneYearAhead
     var serial = new java.math.BigInteger(new java.util.Random().nextInt)
-
-    def setX509Certificate(cert: X509Certificate){
-      val rhTrie = RedHatNode(cert)
-      println("Order : " + namespace.order)
-      order = GenericCertificateEntity('Order, rhTrie \ namespace.order)
-      system = GenericCertificateEntity('System, rhTrie \ namespace.system)
-      startDate = cert.getNotBefore
-      endDate = cert.getNotAfter
-      serial = cert.getSerialNumber
-      rhTrie \ namespace.product match {
-        case Some(node) if node.children != None =>
-          for(product <- node.children.get){
-            products += GenericCertificateEntity('Product, product._2)
-          }
-        case None | _ =>
-      }
-
-      rhTrie \ namespace.content match { //content namespace level
-        case Some(node) if node.children != None =>
-          for(content <- node.children.get){ //content hash level.
-            for(child <- content._2.children.get){  //for same content, there could be more than single repo type
-              contents += GenericCertificateEntity('Content, child._2)
-            }
-          }
-        case None | _ =>
-      }
-
-      rhTrie \ namespace.role match {
-        case Some(node) if node.children != None =>
-          for(role <- node.children.get){
-            roles += GenericCertificateEntity('Role, role._2)
-          }
-        case None | _ =>
-      }
-    }
+    var publicKey: PublicKey = _
+    var subjectDN = createDN()
 
     override def toString = {
       val bufr = new StringBuilder
@@ -266,6 +234,57 @@ object CertificateGenerationUtils{
       bufr.toString
     }
   }
+  object Certificate{
+    import ExtensionSupport._
+    def apply(cert: X509Certificate) = {
+      val certificate = new Certificate
+      val rhTrie = RedHatNode(cert)
+      println("Order : " + namespace.order)
+      certificate.order = GenericCertificateEntity('Order, rhTrie \ namespace.order)
+      certificate.system = GenericCertificateEntity('System, rhTrie \ namespace.system)
+      certificate.startDate = cert.getNotBefore
+      certificate.endDate = cert.getNotAfter
+      certificate.serial = cert.getSerialNumber
+      certificate.publicKey = cert.getPublicKey
+      certificate.subjectDN = cert.getSubjectDN.toString
+      rhTrie \ namespace.product match {
+        case Some(node) if node.children != None =>
+          for(product <- node.children.get){
+            certificate.products += GenericCertificateEntity('Product, product._2)
+          }
+        case None | _ =>
+      }
+
+      rhTrie \ namespace.content match { //content namespace level
+        case Some(node) if node.children != None =>
+          for(content <- node.children.get){ //content hash level.
+            for(child <- content._2.children.get){  //for same content, there could be more than single repo type
+              certificate.contents += GenericCertificateEntity('Content, child._2)
+            }
+          }
+        case None | _ =>
+      }
+
+      rhTrie \ namespace.role match {
+        case Some(node) if node.children != None =>
+          for(role <- node.children.get){
+            certificate.roles += GenericCertificateEntity('Role, role._2)
+          }
+        case None | _ =>
+      }
+      certificate
+    }
+
+    def toX509(cert: Certificate, keyCert: Option[KeyAndCertificate] = None): X509Certificate = {
+      import GenericCertificateEntity.toExtensions
+      val extensions: mutable.Buffer[X509Extn] = new mutable.ArrayBuffer
+      extensions ++= toExtensions(cert.contents) ++= toExtensions(cert.roles) ++= toExtensions(cert.products)
+      cert.system match{ case Some(system) => extensions ++= toExtensions(system); case None => }
+      cert.order match{ case Some(order) => extensions ++= toExtensions(order); case None => }
+      createX509Cert(new X500Principal(cert.subjectDN), DateRange(cert.startDate, cert.endDate), 
+		     cert.publicKey, keyCert, Some(extensions))
+    }
+  }
 
   //implicit def xcertToCert(cert: X509Certificate): Certificate = new Cer
 
@@ -275,9 +294,9 @@ object CertificateGenerationUtils{
 object Main extends Application{
   import Utils.implicits.{dumpByteIntoFile, imKeyToBytes, intToStr, xCertToBytes}
   import CertificateGenerationUtils._
-  val kc = CertificateGenerationUtils.createRandomX509CertAndKey
-  println(new String(kc.key))
-  println(new String(kc.certificate))
+  // val kc = CertificateGenerationUtils.createRandomX509CertAndKey
+  // println(new String(kc.key))
+  // println(new String(kc.certificate))
   val keyPair = keyFactory.generateKeyPair
   val extensions:mutable.Buffer[X509Extn] = new mutable.ArrayBuffer[X509Extn]
   (extensions ++=
@@ -292,13 +311,14 @@ object Main extends Application{
 		      createX509Cert(pbKey = keyPair.getPublic, extensions = Some(extensions)))
   "/home/ajay/tmp/key.pem" << kc1.key
   "/home/ajay/tmp/cert.pem" << kc1.certificate
-  "/home/ajay/tmp/cert1.pem" << kc.certificate
+ // "/home/ajay/tmp/cert1.pem" << kc.certificate
   val trie = ExtensionSupport.RedHatNode.toTrie(kc1.certificate)
-  val testCert = new Certificate
-  testCert.setX509Certificate(kc1.certificate)
-  println(testCert)
-  println(createDN())
-  println(createDN())
+  val testCert = Certificate(kc1.certificate)
 
+  //println(Certificate.toX509(cert = testCert))
+  val editor = new com.redhat.certgen.FieldsEditor.CertificateEditor(testCert)
+  println(editor.editableFields)
+  println(editor.editorFor("startDate").asInstanceOf[FieldsEditor.SimpleEditor].update("startDate", "02/02/2001"))
+  println(testCert)
 }
 
