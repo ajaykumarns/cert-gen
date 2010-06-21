@@ -65,7 +65,7 @@ object ExtensionSupport{
       println(parentNode.children.mkString("\n") + "extensions : " + extensions)
       extensions match {
         case head :: tail =>
-          println("head: "+ head + parentNode.children.get.get(head) + "\n" + parentNode.children.get)
+          //println("head: "+ head + parentNode.children.get.get(head) + "\n" + parentNode.children.get)
           parentNode.children match {
             case Some(map) if map.contains(head)=> _locate(map(head), tail)
             case None | _ => None

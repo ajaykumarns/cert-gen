@@ -12,6 +12,7 @@ COPYRIGHT = ""
 repositories.remote << "http://www.ibiblio.org/maven2/"
 BOUNCYCASTLE = group('bcprov-jdk16', 'bcpg-jdk16', :under=>'org.bouncycastle', :version=>'1.44')
 Project.local_task :main
+Project.local_task :cli
 desc "The Cert-generation project"
 define "cert-generation" do
 
@@ -24,8 +25,12 @@ define "cert-generation" do
   package :jar
   puts compile.dependencies.class
   dependencies = compile.dependencies.clone.add("target/classes").join(File::PATH_SEPARATOR)
-  task :main => :compile do
+  task :main do
     #Java::Commands::java('com.redhat.certgen.Main', { :classpath => compile.dependencies.join(File::PATH_SEPARATOR) })
     system "java -cp #{dependencies} com.redhat.certgen.Main"
+  end
+
+  task :cli do
+    system "java -cp #{dependencies} com.redhat.certgen.CLI #{ENV['path']}"
   end
 end

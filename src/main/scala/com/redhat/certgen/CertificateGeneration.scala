@@ -8,6 +8,7 @@ import java.util.Date
 import scala.collection._
 import org.bouncycastle.asn1.x509._
 import javax.security.auth.x500.X500Principal
+import java.math.BigInteger
 case class DateRange(startDate: Date, endDate: Date)
 case class KeyAndCertificate(key: PrivateKey, certificate: X509Certificate)
 case class X509Extn(oid: String, critical: Boolean, asn1Encodable: ASN1Encodable)
@@ -26,12 +27,13 @@ object CertificateGenerationUtils{
   }
 
   def createX509Cert(principal: X500Principal = new X500Principal(createDN()),
-		     dtRange: DateRange = currentDateRange,
+		     dtRange: DateRange = currentDateRange, 
+		     serial:BigInteger = new BigInteger("" + scala.math.abs(new java.util.Random().nextInt)),
                      pbKey: PublicKey, keyCert: Option[KeyAndCertificate] = None,
                      extensions: Option[Iterable[X509Extn]] = None): X509Certificate = {
 
     val gen = new org.bouncycastle.x509.X509V3CertificateGenerator()
-    gen.setSerialNumber(new java.math.BigInteger("" + scala.math.abs(new java.util.Random().nextInt)))
+    gen.setSerialNumber(serial)
     gen.setNotBefore(dtRange.startDate)
     gen.setNotAfter(dtRange.endDate)
     gen.setSubjectDN(principal)
@@ -167,7 +169,7 @@ object CertificateGenerationUtils{
       certificateToFieldEntityMap(entity.symbol).foreach {
         case (symb: Symbol, index: Int) =>
           entity \ symb match {
-            case Some(value) => extensions += X509Extn(entity.namespace.extend(index), false, value)
+            case Some(value) => extensions += X509Extn(entity.namespace.extend(index + 1), false, value)
             case None =>
           }
       }
@@ -184,7 +186,7 @@ object CertificateGenerationUtils{
       def setFields(entity: GenericCertificateEntity) = {
         val fields: Map[Int, Symbol] = certificateToFieldEntityMapRev(entity.symbol)
         for( (pos, node) <- node.children.getOrElse({new mutable.HashMap[String, TrieNode]})){
-          //println(pos + "." + node)
+          println(pos + "." + node)
           entity(fields(pos.trim - 1)) = new String(node.value)
         }
         entity
@@ -281,8 +283,8 @@ object CertificateGenerationUtils{
       extensions ++= toExtensions(cert.contents) ++= toExtensions(cert.roles) ++= toExtensions(cert.products)
       cert.system match{ case Some(system) => extensions ++= toExtensions(system); case None => }
       cert.order match{ case Some(order) => extensions ++= toExtensions(order); case None => }
-      createX509Cert(new X500Principal(cert.subjectDN), DateRange(cert.startDate, cert.endDate), 
-		     cert.publicKey, keyCert, Some(extensions))
+      createX509Cert(principal = new X500Principal(cert.subjectDN), dtRange = DateRange(cert.startDate, cert.endDate),
+		     serial = cert.serial, pbKey = cert.publicKey, keyCert = keyCert, extensions = Some(extensions))
     }
   }
 
