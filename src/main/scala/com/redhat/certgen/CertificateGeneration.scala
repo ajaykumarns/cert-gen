@@ -210,26 +210,33 @@ object CertificateGenerationUtils{
     def toExtensions(entities: Iterable[GenericCertificateEntity]): Iterable[X509Extn] = entities.flatMap(toExtensions)
     
   }
+
+  object implicits{
+    import com.redhat.certgen.Node
+    case class N(override val description: String,
+		 override val children: Iterator[Node] = Iterator.empty) extends Node
+    implicit def gceToNode(gce: GenericCertificateEntity): Node = null
+  }
  
   @scala.reflect.BeanInfo class Certificate{
     import ExtensionSupport._
-
+    import com.redhat.certgen.editor._
     @UseEditor(editor=classOf[MultiElementsEditor])
-    @CertificateEntity(category="Content")
+    @CertificateType(category="Content")
     val contents:mutable.Buffer[GenericCertificateEntity] = new mutable.ArrayBuffer
 
     @UseEditor(editor=classOf[MultiElementsEditor])
-    @CertificateEntity(category="Role")
+    @CertificateType(category="Role")
     val roles: mutable.Buffer[GenericCertificateEntity] = new mutable.ArrayBuffer
 
-    @CertificateEntity(category="System")
+    @CertificateType(category="System")
     var system: Option[GenericCertificateEntity] = None
 
-    @CertificateEntity(category="Order")
+    @CertificateType(category="Order")
     var order: Option[GenericCertificateEntity] = None
 
     @UseEditor(editor=classOf[MultiElementsEditor])
-    @CertificateEntity(category="Product")
+    @CertificateType(category="Product")
     val products: mutable.Buffer[GenericCertificateEntity] = new mutable.ArrayBuffer
 
     var startDate = new Date()
@@ -310,6 +317,7 @@ object CertificateGenerationUtils{
 
 object Main extends Application{
   import Utils.implicits.{dumpByteIntoFile, imKeyToBytes, intToStr, xCertToBytes}
+  import com.redhat.certgen.editor._
   import CertificateGenerationUtils._
   // val kc = CertificateGenerationUtils.createRandomX509CertAndKey
   // println(new String(kc.key))
@@ -333,9 +341,9 @@ object Main extends Application{
   val testCert = Certificate(kc1.certificate)
 
   //println(Certificate.toX509(cert = testCert))
-  val editor = new com.redhat.certgen.FieldsEditor.CertificateEditor(testCert)
+  val editor = CertificateEditor(testCert)
   println(editor.editableFields)
-  println(editor.editorFor("startDate").asInstanceOf[FieldsEditor.SimpleEditor].update("startDate", "02/02/2001"))
+  println(editor.editorFor("startDate").asInstanceOf[SimpleEditor].apply("02/02/2001"))
   println(testCert)
 }
 

@@ -1,7 +1,5 @@
 package com.redhat.certgen.editor
-import com.redhat.certgen.editor.Editors.SimpleEditor
-
-class DateEditor(fmt: String) extends PropertyEditor{
+class DateEditor(fmt: String) extends SimpleEditorSupport{
   def this() = this("MM/dd/yyyy")
   val parser = new java.text.SimpleDateFormat(fmt)
   override def apply(str: String){
@@ -12,7 +10,7 @@ class DateEditor(fmt: String) extends PropertyEditor{
     }
   }
 }
-class IntEditor extends PropertyEditor{
+class IntEditor extends SimpleEditorSupport{
   override def apply(str: String){
     try{ methods.setter.invoke(this.instance, Integer.parseInt(str).asInstanceOf[AnyRef])}
     catch{
@@ -22,7 +20,7 @@ class IntEditor extends PropertyEditor{
 }
 
 
-class BigIntEditor extends PropertyEditor{
+class BigIntEditor extends SimpleEditorSupport{
   override def apply(str: String){
     try{ methods.setter.invoke(this.instance, new java.math.BigInteger(str)) }
     catch{

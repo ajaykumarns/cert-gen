@@ -1,6 +1,17 @@
 package com.redhat.certgen.editor
 import com.redhat.certgen.editor._
 import com.github.certgen.annotations._
+import scala.collection.mutable
+import com.redhat.certgen.CertificateGenerationUtils.{GenericCertificateEntity, Certificate}
+import com.redhat.certgen.Utils.implicits._
+
+object GenericCertEntityEditor{
+  def apply(obj: AnyRef): GenericCertEntityEditor = {
+    val editor = new GenericCertEntityEditor 
+    editor.instance = obj
+    return editor
+  }
+}
 class GenericCertEntityEditor extends ComplexEditorSupport{
   private def entity = toBeEditedEntity.asInstanceOf[GenericCertificateEntity]
   private def printVals(all: Boolean){
@@ -18,7 +29,10 @@ class GenericCertEntityEditor extends ComplexEditorSupport{
   override def editableFields = Some(entity.fields.map(_.name))
   override def editorFor(property: String) = new SimpleEditor{
     override def apply(str: String) = setValue(Symbol(str), property)
-    override def asText = entity(str)
+    override def asText = entity \ (Symbol(property)) match{
+      case Some(x) => x.asInstanceOf[String]
+      case None => ""
+    }
     def setValue(sym: Symbol, value: String){
       entity(sym) = value
     }
@@ -27,7 +41,7 @@ class GenericCertEntityEditor extends ComplexEditorSupport{
   
 
  class MultiElementsEditor extends SequenceContainerEditorSupport{
-   private def elements = toBeEditedEntity.asInstanceOf[mutable.Buffer[GenericCertificateEntity]
+   private def elements = toBeEditedEntity.asInstanceOf[mutable.Buffer[GenericCertificateEntity]]
    override def printAll{
      println("\nTotal number of elements: " + elements.size)
      println(elements.mkString("|elements begin|", elements.mkString("\n"), "|elements end|"))
@@ -37,12 +51,12 @@ class GenericCertEntityEditor extends ComplexEditorSupport{
    override def editableFields = 
      Some(new scala.collection.immutable.Range(0, elements.size, 1).map("" + _))
 
-   override def editorFor(property: String): ObjectEditor = {
+   override def editorFor(property: String): Editor = {
      if(Integer.parseInt(property) > elements.size){
        println("[Error] Input index exceeds > #" + elements.size)
        return DumbEditor
      }else{
-       return new GenericCertEntityEditor(elements(property))
+       return GenericCertEntityEditor(elements(property))
      }
    }
    //TODO: Total failure to extract all editor creation to factory. Also role creation does not work
@@ -50,9 +64,9 @@ class GenericCertEntityEditor extends ComplexEditorSupport{
    override def add: Editor = {
      import scala.util.Random._
      import com.redhat.certgen.ExtensionSupport.namespace
-     val ann = getAnn(classOf[CertificateEntity])
+     val ann = getAnn(classOf[CertificateType])
      if(ann != null) {
-       ann.asInstanceOf[CertificateEntity].category match {
+       ann.asInstanceOf[CertificateType].category match {
          case "Content" => 
           val content = GenericCertificateEntity(Symbol("Content"), namespace.content + "." + nextInt + ".1")
           return addAndReturnEditor(content)
@@ -67,10 +81,8 @@ class GenericCertEntityEditor extends ComplexEditorSupport{
    }
     
    private def addAndReturnEditor(gce: GenericCertificateEntity): Editor = {
-     elements += content
-     val gce = new GenericCertEntityEditor
-     gce.instance = content
-     return gce
+     elements += gce
+     GenericCertEntityEditor(gce)
    }
  }
  
@@ -78,9 +90,9 @@ class GenericCertEntityEditor extends ComplexEditorSupport{
    override def edit: Editor = {
      import com.redhat.certgen.ExtensionSupport.namespace
      if(!exists){
-        val ann = getAnn(classOf[CertificateEntity])
+        val ann = getAnn(classOf[CertificateType])
         if(ann != null){
-          ann.asInstanceOf[CertificateEntity].category match {
+          ann.asInstanceOf[CertificateType].category match {
             case "System" =>
               methods.setter.invoke(instance, 
                 Some(GenericCertificateEntity(Symbol("System"), namespace.system)))
@@ -92,16 +104,19 @@ class GenericCertEntityEditor extends ComplexEditorSupport{
           }
         }
      }
-     val gce = GenericCertEntityEditor
-     gce.instance = toBeEditedEntity
-     return gce
+     GenericCertEntityEditor(toBeEditedEntity)
    }
  }
 
-
+ object CertificateEditor{
+   def apply(obj: AnyRef) = {
+     val cert = new CertificateEditor
+     cert.instance = obj 
+     cert
+   }
+ }
  class CertificateEditor extends ComplexEditorSupport{
    private def cert = instance.asInstanceOf[Certificate]
-   private lazy val dtParser = new java.text.SimpleDateFormat("MM/dd/yyyy")
    override def printAvailable = println(cert.toString)
    private def printBufr(str: String, iter: mutable.Buffer[GenericCertificateEntity]){
      println("\n|" + (str + "| = " + (if(iter.size > 0) iter.mkString("\n") else "[Value not present]")) )
@@ -123,57 +138,5 @@ class GenericCertEntityEditor extends ComplexEditorSupport{
    private val writeMethods = pds.map(_.getWriteMethod).filter(_ != null)
 
    override val editableFields:Option[IndexedSeq[String]] = Some(readMethods.map(_.getName))
-   override def editorFor(property: String): ObjectEditor = {
-     val method = readMethods.find(_.getName == property)
-     val bufrClass = classOf[mutable.Buffer[_]]
-     val dClass = classOf[java.util.Date]
-     val strClass = classOf[String]
-     val optClass = classOf[Option[_]]
-     val bIntClass = classOf[java.math.BigInteger]
-     method match {
-       case Some(m) =>
-	 m.getReturnType match {
-	   case `bufrClass` => 
-	     new MultiElementsEditor(m.invoke(cert)
-				     .asInstanceOf[mutable.Buffer[GenericCertificateEntity]])
-	   case `strClass` => new SimpleEditor{
-	     override def update(str: String, value: String):Unit = {
-	       cert.subjectDN = value //forgive me here! will change it to be more generic later
-	     }
-	   }
-	   case `dClass` => new SimpleEditor{
-	     override def update(str: String, value: String):Unit = {
-	       try{
-		 val dt = dtParser.parse(value)
-		 if(property == "startDate")
-		   cert.startDate = dt
-		 else
-		   cert.endDate = dt
-	       }catch {
-		 case e: Exception =>
-		   println("Date should be in format: MM/dd/yyyy. (01/12/2010)")
-	       }
-	     }
-	   }
-	   case `optClass` =>
-	     val toEdit = m.invoke(cert)
-	     toEdit match {
-	       case Some(gce) => new GenericCertEntityEditor(gce.asInstanceOf[GenericCertificateEntity])
-	       case None => DumbEditor
-
-	     }
-	   case `bIntClass` =>
-	     new SimpleEditor{ //hard coded reference to serial -- will change later
-	       override def update(str: String, value: String): Unit = {
-		 try { cert.serial = new java.math.BigInteger(value) }
-		 catch{
-		   case _ => println("\nUnable to convert " + value + " to BigInteger. Input should be an integer")
-		 }
-	       }
-	     }
-	   case _ => DumbEditor
-	 }
-       case None => DumbEditor
-    }
-  }
+   override def editorFor(property: String): Editor = EditorFactory.editorFor(instance, property)
  }

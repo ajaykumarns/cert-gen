@@ -1,5 +1,7 @@
 package com.redhat.certgen.editor
-import com.redhat.certgen.editor._
+import java.beans._
+import scala.collection.mutable
+import com.github.certgen.annotations._
 object EditorFactory{
 
   def editorsFor(obj: AnyRef):mutable.Map[String, Editor] = {
@@ -24,7 +26,7 @@ object EditorFactory{
       (classOf[String] -> classOf[StringEditor]),
       (classOf[java.math.BigInteger] -> classOf[BigIntEditor]),
       (classOf[java.util.Date] -> classOf[DateEditor]),
-      (classOf[Option] -> classOf[GenericOptionEditor])
+      (classOf[Option[_]] -> classOf[GenericOptionEditor])
     )
     def editorFor(obj: AnyRef, pd: PropertyDescriptor): Editor = {
       editors.get(pd.getReadMethod.getReturnType) match {
@@ -47,12 +49,12 @@ object EditorFactory{
           createEditor(clas.asInstanceOf[UseEditor].editor, obj, pd)
         }
       }catch{
-        e: NoSuchFieldException => 
+        case e: NoSuchFieldException => 
       }
       DumbEditor
     }
     private def createEditor(editorClas: Class[_], obj: AnyRef, pd: PropertyDescriptor) = {
-       val editor = editorClas.newInstance.asInstanceOf[PropertyEditor]
+       val editor = editorClas.newInstance.asInstanceOf[EditorSupport]
        editor.instance = obj 
        editor.propertyDescriptor = pd 
        editor 

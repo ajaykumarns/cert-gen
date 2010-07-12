@@ -2,7 +2,8 @@ package com.redhat.certgen.editor
 import com.redhat.certgen.CertificateGenerationUtils._
 import scala.collection.{IndexedSeq, mutable}
 import com.redhat.certgen.Utils.implicits._
-
+import java.lang.reflect._
+import java.beans.PropertyDescriptor
 case class MethodPair(getter: Method, setter: Method)
 trait Editor{
     //marker interface
@@ -36,13 +37,13 @@ trait SequenceContainerEditor extends ComplexEditor{
 }
 
 trait EditorSupport extends Editor{
-  var instance: Any = _
-  var propertyDescriptor = _
+  var instance: AnyRef = _
+  var propertyDescriptor:PropertyDescriptor = _
   def methods: MethodPair =
     MethodPair(propertyDescriptor.getReadMethod, propertyDescriptor.getWriteMethod)
   protected def toBeEditedEntity = methods.getter.invoke(instance)
   
-  protected def getAnn(clas: Class[_]) = 
+  protected def getAnn[T <: java.lang.annotation.Annotation](clas: Class[T]) = 
     instance.getClass.getDeclaredField(propertyDescriptor.getName).getAnnotation(clas)
 }
 
@@ -64,10 +65,9 @@ trait ComplexEditorSupport extends ComplexEditor with EditorSupport{
 
 trait SequenceContainerEditorSupport extends SequenceContainerEditor with EditorSupport{
   override def delete(index: Int):Unit = { 
-    val bufr = this.instance.asInstanceOf[scala.collection.mutable.BufferLike]
+    val bufr = this.instance.asInstanceOf[scala.collection.mutable.Buffer[_]]
     if(index > bufr.size){
-      println(String.format("Cannot delete %dth element. Input index exceeds > # %d",
-                    index, bufr.size))
+      println("Cannot delete " + index + "th element. Input index exceeds > #" + bufr.size)
     }else{
       bufr.remove(index)
     }
@@ -76,7 +76,7 @@ trait SequenceContainerEditorSupport extends SequenceContainerEditor with Editor
 
 trait OptionEditorSupport extends OptionEditor with EditorSupport{
   override def exists = toBeEditedEntity != None
-  override def delete:Unit{
+  override def delete{
     methods.setter.invoke(instance, None)
   }
 }

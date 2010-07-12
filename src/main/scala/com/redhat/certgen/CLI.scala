@@ -1,11 +1,12 @@
 package com.redhat.certgen
-import com.redhat.certgen.Editors._
+import com.redhat.certgen.editor._
+import com.redhat.certgen.CertificateGenerationUtils.{GenericCertificateEntity, Certificate}
+import com.redhat.certgen.Utils.implicits._
 class CMDFacade(val cert: Certificate){
-  import com.redhat.certgen.FieldsEditor._
   import java.lang.System.console
   def this(x509Cert: java.security.cert.X509Certificate) = this(Certificate(x509Cert))
   private val editorStack = new scala.collection.mutable.ArrayStack[ComplexEditor]
-  editorStack.push(new CertificateEditor(cert))
+  editorStack.push(CertificateEditor(cert))
 
   def evalLoop{
     def printOptions{
@@ -40,7 +41,7 @@ class CMDFacade(val cert: Certificate){
 		    if(value.trim.length == 0){
 		      console.printf("\nNo value entered. Ignoring edit")
 		    }else{
-		      simple(list(no.trim)) = value
+		      simple.apply(value)
 		      console.printf("\nValue updated.")
 		    }
 		    case complex: ComplexEditor => 
