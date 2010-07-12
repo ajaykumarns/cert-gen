@@ -2,7 +2,7 @@ package com.redhat.certgen.editor
 import com.redhat.certgen.editor._
 import com.github.certgen.annotations._
 import scala.collection.mutable
-import com.redhat.certgen.CertificateGenerationUtils.{GenericCertificateEntity, Certificate}
+import com.redhat.certgen.certificate.{GenericCertificateEntity, Certificate}
 import com.redhat.certgen.Utils.implicits._
 
 object GenericCertEntityEditor{

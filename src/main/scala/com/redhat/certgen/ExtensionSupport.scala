@@ -11,6 +11,7 @@ import java.security.cert._
  */
 
 object ExtensionSupport{
+  val logger = org.slf4j.LoggerFactory.getLogger(ExtensionSupport.getClass)
   object namespace{
     val rh = "1.3.6.1.4.1.2312.9"
     val product = rh + ".1"
@@ -62,7 +63,7 @@ object ExtensionSupport{
                   .readObject.asInstanceOf[DEROctetString].getOctets).readObject.toString
     
     protected def _locate(parentNode: TrieNode, extensions: List[String]): Option[TrieNode] = {
-      println(parentNode.children.mkString("\n") + "extensions : " + extensions)
+      logger.debug(parentNode.children.mkString("\n") + "extensions : " + extensions)
       extensions match {
         case head :: tail =>
           //println("head: "+ head + parentNode.children.get.get(head) + "\n" + parentNode.children.get)
@@ -76,7 +77,7 @@ object ExtensionSupport{
 
     def locateChild(ex: String) : Option[TrieNode] = {
       val rest = ex.substring(fullExtension.length +1)
-      println("locating Child : " +  ex)
+      logger.debug("locating Child : " +  ex)
       _locate(this, ex.substring(fullExtension.length +1).split("\\.").toList)
     }
 
@@ -105,12 +106,12 @@ object ExtensionSupport{
   object RedHatNode{
     def toTrie(cert: X509Certificate): RedHatNode= {
       val redhatNode = new RedHatNode(cert)
-      println("total no of extensions : " + cert.getNonCriticalExtensionOIDs.size)
+      logger.debug("total no of extensions : " + cert.getNonCriticalExtensionOIDs.size)
       cert.getNonCriticalExtensionOIDs.toArray.asInstanceOf[Array[Object]].map(_.asInstanceOf[String])
                 .filter(_.indexOf(namespace.rh) != -1)
                 .foreach { ex: Object =>
         val str = ex.asInstanceOf[String].stripRhExtension
-        println("Adding extension : " + ex + " | str :" + str + " | " + str.split("\\.").mkString(","))
+        logger.debug("Adding extension : " + ex + " | str :" + str + " | " + str.split("\\.").mkString(","))
         redhatNode.addExtension(str.split("\\.").toList)
       }
       return redhatNode

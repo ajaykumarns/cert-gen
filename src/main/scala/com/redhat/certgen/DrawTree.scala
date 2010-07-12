@@ -5,7 +5,8 @@ trait Node{
   def description: String
   def children: Iterator[Node]
 }
-
+case class N(override val description: String,
+	     override val children: Iterator[Node] = Iterator.empty) extends Node
 trait TreeDrawer{
   def drawTree(node: Node): Unit
 }
@@ -50,7 +51,7 @@ extends TreeDrawer{
 	case head::tail => 
 	  options.printer.printExtensions(" " * head.depth + (if(head.hasMoreChildren) options.pipe else ""))
 	  drawParentPipes(tail)
-	case _ => println("should not happen")
+	case _ => 
       }
       drawParentPipes(lst)
       val iter = node.children

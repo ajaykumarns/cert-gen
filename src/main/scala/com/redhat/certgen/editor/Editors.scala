@@ -1,5 +1,5 @@
 package com.redhat.certgen.editor
-import com.redhat.certgen.CertificateGenerationUtils._
+import com.redhat.certgen.certificate.CertificateGenerationUtils._
 import scala.collection.{IndexedSeq, mutable}
 import com.redhat.certgen.Utils.implicits._
 import java.lang.reflect._
