@@ -9,6 +9,7 @@ import scala.collection._
 import org.bouncycastle.asn1.x509._
 import javax.security.auth.x500.X500Principal
 import java.math.BigInteger
+import com.github.certgen.annotations._
 case class DateRange(startDate: Date, endDate: Date)
 case class KeyAndCertificate(key: PrivateKey, certificate: X509Certificate)
 case class X509Extn(oid: String, critical: Boolean, asn1Encodable: ASN1Encodable)
@@ -209,14 +210,28 @@ object CertificateGenerationUtils{
     def toExtensions(entities: Iterable[GenericCertificateEntity]): Iterable[X509Extn] = entities.flatMap(toExtensions)
     
   }
-
+ 
   @scala.reflect.BeanInfo class Certificate{
     import ExtensionSupport._
+
+    @UseEditor(editor=classOf[MultiElementsEditor])
+    @CertificateEntity(category="Content")
     val contents:mutable.Buffer[GenericCertificateEntity] = new mutable.ArrayBuffer
+
+    @UseEditor(editor=classOf[MultiElementsEditor])
+    @CertificateEntity(category="Role")
     val roles: mutable.Buffer[GenericCertificateEntity] = new mutable.ArrayBuffer
+
+    @CertificateEntity(category="System")
     var system: Option[GenericCertificateEntity] = None
+
+    @CertificateEntity(category="Order")
     var order: Option[GenericCertificateEntity] = None
+
+    @UseEditor(editor=classOf[MultiElementsEditor])
+    @CertificateEntity(category="Product")
     val products: mutable.Buffer[GenericCertificateEntity] = new mutable.ArrayBuffer
+
     var startDate = new Date()
     var endDate = (new Date()).oneYearAhead
     var serial = new java.math.BigInteger(new java.util.Random().nextInt)
