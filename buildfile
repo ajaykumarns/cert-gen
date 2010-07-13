@@ -29,7 +29,9 @@ define "cert-generation" do
   #compile.using :make => :transitive
   compile.with BOUNCYCASTLE,LOG4J,SLF4J
   package :jar
-  dependencies = compile.dependencies.clone.add("target/classes").join(File::PATH_SEPARATOR)
+  dependencies = compile.dependencies.clone \
+                  .add("target/cert-generation-#{VERSION_NUMBER}.jar") \
+                  .join(File::PATH_SEPARATOR)
   task :main do
     system "java -cp #{dependencies} com.redhat.certgen.Main"
   end

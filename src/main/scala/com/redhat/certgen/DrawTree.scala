@@ -36,6 +36,7 @@ case class ConsoleOptions(defaultDepth: Int, pipe: String,
 			  
 			  
 object ConsoleTreeDrawer{
+  def drawNode(root:Node) = drawTree(root)
   def drawTree(root: Node){
     val ctd = new ConsoleTreeDrawer
     ctd.drawTree(root)

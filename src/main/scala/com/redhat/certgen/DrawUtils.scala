@@ -6,6 +6,8 @@ import com.redhat.certgen.certificate._
 object DrawUtils{
   trait ToNode{
     def toNode(all: Boolean = false):Node
+    def drawAll = ConsoleTreeDrawer.drawNode(toNode(true))
+    def drawExisting = ConsoleTreeDrawer.drawNode(toNode(false))
   }
   object implicits{
     import com.redhat.certgen.{Node, N}
@@ -19,7 +21,6 @@ object DrawUtils{
         }.iterator)
       }
     }
-
     implicit def certToNode(c: Certificate) = new ToNode{
       import Iterator.{single, empty}
       override def toNode(all: Boolean = false): Node = {

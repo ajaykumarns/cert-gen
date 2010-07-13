@@ -16,15 +16,18 @@ trait SimpleEditor extends Editor with (String => Unit){
   def defaultValue: Option[String] = None
 }
 
-trait OptionEditor extends Editor{
+trait Printable{
+  def printAll{}
+  def printAvailable{}
+}
+
+trait OptionEditor extends Editor with Printable{
   def delete:Unit
   def edit: Editor
   def exists: Boolean
 }
 
-trait ComplexEditor extends Editor{
-  def printAll{}
-  def printAvailable{}
+trait ComplexEditor extends Editor with Printable{
   def editableFields: Option[IndexedSeq[String]] = None
   def editorFor(property: String): Editor = DumbEditor
   def done(parent: Editor){}
@@ -45,6 +48,15 @@ trait EditorSupport extends Editor{
   
   protected def getAnn[T <: java.lang.annotation.Annotation](clas: Class[T]) = 
     instance.getClass.getDeclaredField(propertyDescriptor.getName).getAnnotation(clas)
+
+  protected lazy val category:String = {
+     val ann = getAnn(classOf[com.github.certgen.annotations.CertificateType])
+     if(ann != null)
+       ann.category
+     else ""
+   }
+
+
 }
 
 
