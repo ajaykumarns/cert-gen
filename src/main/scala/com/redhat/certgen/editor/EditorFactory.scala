@@ -3,7 +3,7 @@ import java.beans._
 import scala.collection.mutable
 import com.github.certgen.annotations._
 object EditorFactory{
-
+  val logger = com.redhat.certgen.Utils.loggerFor(getClass)
   def editorsFor(obj: AnyRef):mutable.Map[String, Editor] = {
       val editorMap = new mutable.HashMap[String, Editor]
       val (btProps, nbtProps) = Introspector.getBeanInfo(obj.getClass)
@@ -50,6 +50,7 @@ object EditorFactory{
         }
       }catch{
         case e: NoSuchFieldException => 
+	  logger.error("Error while trying to create custom editor for" + pd.getName,e)
       }
       DumbEditor
     }

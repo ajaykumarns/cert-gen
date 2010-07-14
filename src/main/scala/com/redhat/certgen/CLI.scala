@@ -44,7 +44,6 @@ class CMDFacade(val cert: Certificate){
       this
     }
   }
-
   def evalLoop{
     def pushEditorIntoStack(e: Editor){
       editorStack.push(e)
@@ -94,7 +93,7 @@ class CMDFacade(val cert: Certificate){
 	      availableFields match {
 		case Some(list) if list.size > 0 =>
 		  list.zipWithIndex.foreach({ tupl => 
-		    console.printf("\n\t[%d].%s", Integer.valueOf(tupl._2), tupl._1)
+		    console.printf("\n  [%d].%s", Integer.valueOf(tupl._2), tupl._1)
 		  })
 		  console.printf("\nEnter the numbers to edit the field")
 		  console.readLine("\ncert-gen>") match{
@@ -149,7 +148,8 @@ class CMDFacade(val cert: Certificate){
 	     console.printf("\nModified certificate saved successfully to %s", file)
 	   }catch {
 	     case e: Exception => 
-	       console.printf("\nUnable to save certificate to file %s", file); 
+	       console.printf("\nUnable to save certificate to file %s. see /tmp/certgen.log for details..",
+			      file); 
 	       e.printStackTrace
 	   }
 	  }

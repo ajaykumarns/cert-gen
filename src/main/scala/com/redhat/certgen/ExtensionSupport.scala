@@ -10,8 +10,7 @@ import java.security.cert._
  * To change this template use File | Settings | File Templates.
  */
 
-object ExtensionSupport{
-  val logger = org.slf4j.LoggerFactory.getLogger(ExtensionSupport.getClass)
+object ExtensionSupport extends LoggerSupport{
   object namespace{
     val rh = "1.3.6.1.4.1.2312.9"
     val product = rh + ".1"

@@ -9,15 +9,13 @@ import com.redhat.certgen.DrawUtils._
 import com.redhat.certgen.{Node, N}
 import com.redhat.certgen.ConsoleTreeDrawer.drawNode
 object GenericCertEntityEditor{
-  def apply(obj: AnyRef): GenericCertEntityEditor = {
-    val editor = new GenericCertEntityEditor 
-    editor.instance = obj
-    return editor
+  def apply(obj: AnyRef): GenericCertEntityEditor = obj match {
+      case gce: GenericCertificateEntity => new GenericCertEntityEditor(gce)
+      case _ => throw new RuntimeException("Not a generic certificate entity!: " + obj.getClass)
   }
 }
-class GenericCertEntityEditor extends ComplexEditorSupport{
-
-  private def entity = toBeEditedEntity.asInstanceOf[GenericCertificateEntity]
+class GenericCertEntityEditor(private val entity: GenericCertificateEntity) 
+extends ComplexEditor{
   override def printAll = this.entity.drawAll //printVals(true)
   override def printAvailable = this.entity.drawExisting //printVals(false)
   override def editableFields = Some(entity.fields.map(_.name))
@@ -93,7 +91,8 @@ class GenericCertEntityEditor extends ComplexEditorSupport{
               return DumbEditor
           }
      }
-     GenericCertEntityEditor(toBeEditedEntity)
+     new GenericCertEntityEditor(
+       toBeEditedEntity.asInstanceOf[Option[GenericCertificateEntity]].get)
    }
 
    private def print(all: Boolean):Unit = drawNode(toBeEditedEntity match {

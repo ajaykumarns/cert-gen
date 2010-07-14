@@ -14,9 +14,11 @@ import java.security.cert.X509Certificate
  * Time: 4:56:50 PM
  * To change this template use File | Settings | File Templates.
  */
-
+trait LoggerSupport{
+  val logger = Utils.loggerFor(getClass)
+}
 object Utils{
-
+  def loggerFor(clas: Class[_]) = org.slf4j.LoggerFactory.getLogger(clas)
   def toBytes(obj: Any) : Array[Byte] = {
     val byteOut = new ByteArrayOutputStream
     val out = new PEMWriter(new OutputStreamWriter(byteOut))

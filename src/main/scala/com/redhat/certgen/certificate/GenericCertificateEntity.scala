@@ -8,19 +8,22 @@ trait CertificateEntity{
 
 class GenericCertificateEntity(val symbol: Symbol, var namespace: String)
 extends CertificateEntity{
-  
   def this(symbol: Symbol) = this(symbol, null)
-  override val fields:scala.collection.IndexedSeq[Symbol] = GenericCertificateEntity.certificateFieldsMap(symbol)
+  override val fields:scala.collection.IndexedSeq[Symbol] =
+	  GenericCertificateEntity.certificateFieldsMap(symbol)
   private val map: mutable.Map[Symbol, String] = new mutable.HashMap
   def \ (str: Symbol): Option[String] =
     if(map.contains(str)) Some(map(str)) else None
-  def update(sym: Symbol, str: String):Unit = map.put(sym, str)
-
-  override def toString = String.format("[%s] namespace=%s | values = %s", symbol, namespace, map.mkString("\n"))
-  
+  def update(sym: Symbol, str: String){
+    map.put(sym, str)
+    
+  }
+  override def toString = 
+    String.format("[%s] namespace=%s | values = %s", symbol, namespace, map.mkString("\n"))  
 }
 
-object GenericCertificateEntity {
+object GenericCertificateEntity{
+  val logger = com.redhat.certgen.Utils.loggerFor(getClass)
   import com.redhat.certgen.Node
   val contentEntity = 'Content
   val orderEntity = 'Order
@@ -78,7 +81,7 @@ object GenericCertificateEntity {
     def setFields(entity: GenericCertificateEntity) = {
       val fields: Map[Int, Symbol] = certificateToFieldEntityMapRev(entity.symbol)
       for( (pos, node) <- node.children.getOrElse({new mutable.HashMap[String, TrieNode]})){
-        println(pos + "." + node)
+        logger.debug(pos + "." + node)
         entity(fields(pos.trim - 1)) = new String(node.value)
       }
       entity
