@@ -20,22 +20,43 @@ extends ComplexEditor{
   override def printAvailable = this.entity.drawExisting //printVals(false)
   override def editableFields = Some(entity.fields.map(_.name))
   override def editorFor(property: String) = new SimpleEditor{
-    override def apply(str: String) = setValue(Symbol(str), property)
+    override def apply(str: String) = entity(Symbol(property)) = str
     override def asText = entity \ (Symbol(property)) match{
       case Some(x: String) => x
       case None|_ => ""
     }
-    def setValue(sym: Symbol, value: String){
-      entity(sym) = value
+  }
+}
+
+class StringMapEditor extends ComplexEditorSupport with Addable{
+  private def elements = toBeEditedEntity.asInstanceOf[mutable.Map[String, String]]
+  override def printAll = 
+    drawNode(N(propertyDescriptor.getName, elements.iterator.map(m=>N(m._1+"="+m._2))))
+  override def printAvailable = printAll
+  override def editableFields = Some(elements.keySet.toIndexedSeq)
+  override def editorFor(property: String) = new SimpleEditor{
+    override def apply(str: String) = elements(property) = str
+    override def asText = elements.get(property) match{
+      case Some(x: String) => x
+      case None|_ => ""
     }
   }
+  override def add(property: String, value: String){
+    elements(property) = value
+  }
+	     
 }
   
 
  class MultiElementsEditor extends SequenceContainerEditorSupport{
-   private def elements = toBeEditedEntity.asInstanceOf[mutable.Buffer[GenericCertificateEntity]]
+   private def elements = 
+       toBeEditedEntity.asInstanceOf[mutable.Buffer[GenericCertificateEntity]]
    override def printAll =
-     drawNode(N(category, elements.iterator.map(_.toNode(true))))
+     //may throw expception!
+     if(elements.size == 0)
+       drawNode(N(category, Iterator.single(newSubElement.get.toNode(true))))		
+     else
+       drawNode(N(category, elements.iterator.map(_.toNode(true))))
    override def printAvailable = drawNode(N(category, 
 					    elements.iterator.map(_.toNode(false))))
    override def editableFields = 
@@ -52,26 +73,26 @@ extends ComplexEditor{
    //TODO: Total failure to extract all editor creation to factory. Also role creation does not work
    //Content type always = "yum"
    override def add: Editor = {
+     newSubElement match{
+       case Some(gce) => elements += gce; GenericCertEntityEditor(gce)
+       case None => DumbEditor
+     }
+   }
+
+   private def newSubElement: Option[GenericCertificateEntity] = {
      import scala.util.Random._
      import com.redhat.certgen.ExtensionSupport.namespace
      category match {
          case "Content" => 
-          val content = GenericCertificateEntity(Symbol("Content"), 
-						 namespace.content + "." + nextInt + ".1")
-          return addAndReturnEditor(content)
-          
-        case "Product" =>
-          val product = GenericCertificateEntity(Symbol("Product"), 
-						 namespace.product + "." + nextInt)
-          return addAndReturnEditor(product)
-        case _ =>
+          Some(GenericCertificateEntity(
+		Symbol("Content"), namespace.content + "." + nextInt(100) + ".1"))
+	 case "Product" =>
+          Some(GenericCertificateEntity(
+		Symbol("Product"), namespace.product + "." + nextInt(100)))
+       case "Role" =>
+	 Some(GenericCertificateEntity(Symbol("Role"), namespace.role + "." + nextInt(100)))
+        case _ => None
        }
-     DumbEditor
-   }
-    
-   private def addAndReturnEditor(gce: GenericCertificateEntity): Editor = {
-     elements += gce
-     GenericCertEntityEditor(gce)
    }
  }
  

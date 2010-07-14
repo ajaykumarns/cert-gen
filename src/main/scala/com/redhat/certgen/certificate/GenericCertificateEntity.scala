@@ -8,6 +8,7 @@ trait CertificateEntity{
 
 class GenericCertificateEntity(val symbol: Symbol, var namespace: String)
 extends CertificateEntity{
+  import GenericCertificateEntity.logger
   def this(symbol: Symbol) = this(symbol, null)
   override val fields:scala.collection.IndexedSeq[Symbol] =
 	  GenericCertificateEntity.certificateFieldsMap(symbol)
@@ -16,7 +17,7 @@ extends CertificateEntity{
     if(map.contains(str)) Some(map(str)) else None
   def update(sym: Symbol, str: String){
     map.put(sym, str)
-    
+    logger.debug("Update called {} = {}", sym.name, str)
   }
   override def toString = 
     String.format("[%s] namespace=%s | values = %s", symbol, namespace, map.mkString("\n"))  

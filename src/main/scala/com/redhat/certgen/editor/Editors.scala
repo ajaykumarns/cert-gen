@@ -21,6 +21,11 @@ trait Printable{
   def printAvailable{}
 }
 
+//hack - not planned 
+trait Addable{
+  def add(property: String, value: String):Unit
+}
+
 trait OptionEditor extends Editor with Printable{
   def delete:Unit
   def edit: Editor
@@ -77,8 +82,8 @@ trait ComplexEditorSupport extends ComplexEditor with EditorSupport{
 
 trait SequenceContainerEditorSupport extends SequenceContainerEditor with EditorSupport{
   override def delete(index: Int):Unit = { 
-    val bufr = this.instance.asInstanceOf[scala.collection.mutable.Buffer[_]]
-    if(index > bufr.size){
+    val bufr = toBeEditedEntity.asInstanceOf[scala.collection.mutable.Buffer[_]]
+    if(index >= bufr.size){
       println("Cannot delete " + index + "th element. Input index exceeds > #" + bufr.size)
     }else{
       bufr.remove(index)

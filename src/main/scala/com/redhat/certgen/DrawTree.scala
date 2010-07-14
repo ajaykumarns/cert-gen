@@ -27,6 +27,7 @@ class ColorPrinter(val nodeExtensionsColor: String = RESET + WHITE,
   override def printNodeDesc(str: String, parent: Boolean){
     print(if(parent) parentColor else childColor)
     super.printNodeDesc(str, parent)
+    print(RESET)
   }
 }
 

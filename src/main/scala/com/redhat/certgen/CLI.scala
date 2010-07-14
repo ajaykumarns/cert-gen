@@ -157,6 +157,11 @@ class CMDFacade(val cert: Certificate){
 	  editorStack.head match {
 	    case ed: SequenceContainerEditor =>
 	      pushEditorIntoStack(ed.add)
+	    case e: Addable =>
+	      val key   = console.readLine("Enter key:")
+	      val value = console.readLine("Enter value:")
+	      e.add(key, value)
+	      console.printf("Added " + key + "=" + value)
 	    case _ => 
 	      console.printf("\nCurrent entry does not support add")
 	  }
@@ -167,7 +172,7 @@ class CMDFacade(val cert: Certificate){
 		case "q" => 
 		case no: String  =>
 		  ed.delete(no)
-		  console.printf("%s deleted", no)
+		  //console.printf("%s deleted", no)
 		  ed.printAvailable
 		case _ => //heh?
 	      }

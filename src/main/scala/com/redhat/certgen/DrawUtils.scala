@@ -47,7 +47,8 @@ object DrawUtils{
 	  N("startDate = " + c.startDate),
 	  N("endDate = " + c.endDate),
 	  N("serial = " + c.serial.toString),
-	  N("subjectDN = " + c.subjectDN)
+	  N("subjectDN = " + c.subjectDN),
+	  N("customExtensions", c.customExtensions.iterator.map({e => N(e._1 + " = " + e._2)}))
 	  ).iterator ++ optionalComponents)
       }
     }

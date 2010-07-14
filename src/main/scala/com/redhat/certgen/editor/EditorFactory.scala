@@ -29,6 +29,7 @@ object EditorFactory{
       (classOf[Option[_]] -> classOf[GenericOptionEditor])
     )
     def editorFor(obj: AnyRef, pd: PropertyDescriptor): Editor = {
+      logger.debug("editorFor: {}, property: {}", obj.getClass, pd.getName)
       editors.get(pd.getReadMethod.getReturnType) match {
         case Some(x) => createEditor(x, obj, pd)
         case _ => tryCreatingCustomEditor(obj, pd)
@@ -42,11 +43,15 @@ object EditorFactory{
         case None => DumbEditor
       }
     
-    private def tryCreatingCustomEditor(obj: AnyRef, pd: PropertyDescriptor) = {
+    private def tryCreatingCustomEditor(obj: AnyRef, pd: PropertyDescriptor):Editor = {
+      logger.debug("Trying to create custom editor for {}#{}", obj.getClass, pd.getName)
       try{
+       logger.debug("Annotations of {}: {}", pd.getName, 
+		    obj.getClass.getAnnotations.map(_.annotationType).mkString(","))
        val clas = obj.getClass.getDeclaredField(pd.getName).getAnnotation(classOf[UseEditor])
+       logger.debug("UseEditor annotation: {}", clas)
         if(clas != null){
-          createEditor(clas.asInstanceOf[UseEditor].editor, obj, pd)
+          return createEditor(clas.asInstanceOf[UseEditor].editor, obj, pd)
         }
       }catch{
         case e: NoSuchFieldException => 

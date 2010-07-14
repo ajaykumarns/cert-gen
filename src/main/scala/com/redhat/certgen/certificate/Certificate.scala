@@ -39,6 +39,8 @@ import com.redhat.certgen.Utils.implicits._
   var publicKey: PublicKey = _
   var subjectDN = CertificateGenerationUtils.createDN()
 
+  @UseEditor(editor=classOf[StringMapEditor])
+  val customExtensions: Map[String, String] = new mutable.HashMap
   override def toString = {
     val bufr = new StringBuilder
     bufr.append("\n|Certificate|\n beginDate = ")
@@ -101,6 +103,7 @@ object Certificate{
     extensions ++= toExtensions(cert.contents) ++= toExtensions(cert.roles) ++= toExtensions(cert.products)
     cert.system match{ case Some(system) => extensions ++= toExtensions(system); case None => }
     cert.order match{ case Some(order) => extensions ++= toExtensions(order); case None => }
+    extensions ++= cert.customExtensions.iterator.map(e => X509Extn(e._1, false, e._2))
     CertificateGenerationUtils.createX509Cert(principal = new X500Principal(cert.subjectDN), dtRange = DateRange(cert.startDate, cert.endDate),
 		   serial = cert.serial, pbKey = cert.publicKey, keyCert = keyCert, extensions = Some(extensions))
   }
