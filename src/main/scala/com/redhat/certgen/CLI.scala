@@ -202,7 +202,7 @@ object CLI{
 	.generateCertificate(in).asInstanceOf[X509Certificate]
     }
     if(args.length < 1){
-      println("Usage: cli <certificate_path>")
+      println("Usage: cert-gen <certificate_path>")
       return
     }
     val x509Cert = loadCert(args(0))

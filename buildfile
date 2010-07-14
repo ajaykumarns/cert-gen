@@ -32,6 +32,7 @@ define "cert-generation" do
   dependencies = compile.dependencies.clone \
                   .add("target/cert-generation-#{VERSION_NUMBER}.jar") \
                   .join(File::PATH_SEPARATOR)
+  puts dependencies
   task :main do
     system "java -cp #{dependencies} com.redhat.certgen.Main"
   end
