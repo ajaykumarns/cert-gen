@@ -206,6 +206,10 @@ object CLI{
       return
     }
     val x509Cert = loadCert(args(0))
+    if(args.length == 2 && args(1) == "print"){
+      CertificateEditor(Certificate(x509Cert)).printAvailable
+      return
+    }
     new CMDFacade(Certificate(x509Cert)).evalLoop
   }
 
