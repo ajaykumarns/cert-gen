@@ -39,7 +39,7 @@ object GenericCertificateEntity{
     (roleEntity -> Array('name, 'label, 'quantity)),
     (orderEntity -> Array('name, 'orderNo, 'sku, 'subscriptionNo, 'quantity,
 			  'entitlementStartDt, 'entitlementEndDt, 'subType, 'virtualizationLimit, 'socketLimit, 'productOptionCode,
-			  'contractNumber, 'quantityUsed)),
+			  'contractNumber, 'quantityUsed, 'warningPeriod)),
     (systemEntity -> Array('uuid, 'hostUUID))
   )
 
@@ -82,8 +82,12 @@ object GenericCertificateEntity{
     def setFields(entity: GenericCertificateEntity) = {
       val fields: Map[Int, Symbol] = certificateToFieldEntityMapRev(entity.symbol)
       for( (pos, node) <- node.children.getOrElse({new mutable.HashMap[String, TrieNode]})){
-        logger.debug(pos + "." + node)
-        entity(fields(pos.trim - 1)) = new String(node.value)
+        try {
+          logger.debug(pos + "." + node)
+          entity(fields(pos.trim - 1)) = new String(node.value)
+        } catch {
+          case e:NoSuchElementException => logger.debug("key not found")
+        }
       }
       entity
     }

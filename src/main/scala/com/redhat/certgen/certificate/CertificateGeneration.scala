@@ -100,10 +100,10 @@ object CertificateGenerationUtils{
       new mutable.ArrayBuffer[X509Extn] += X509Extn("1.3.6.1.4.1.2312.9.5", false, uuid)
   }
 
-  case class Order(name: String, orderNo: Int, dRange: DateRange = currentDateRange, cNo: Int, qUsed: Int, quantity: Int)
+  case class Order(name: String, orderNo: Int, dRange: DateRange = currentDateRange, cNo: Int, qUsed: Int, quantity: Int, warningPeriod: Int)
      extends X509ExtnSupport{
     override val namespace = "1.3.6.1.4.1.2312.9.4"
-    this + (1, name) + (2, orderNo) + (5, quantity) + (6, dRange.startDate) + (7, dRange.endDate) + (12, cNo) + (13, qUsed)
+    this + (1, name) + (2, orderNo) + (5, quantity) + (6, dRange.startDate) + (7, dRange.endDate) + (12, cNo) + (13, qUsed) + (14, warningPeriod)
 
   }
   case class Content(id: String, _type: String, name: String, labl: String, vendor: String, contentUrl: String, gpgUrl: String, enabled: Boolean)
@@ -125,7 +125,7 @@ object Main extends Application{
   val keyPair = keyFactory.generateKeyPair
   val extensions:mutable.Buffer[X509Extn] = new mutable.ArrayBuffer[X509Extn]
   (extensions ++=
-          Order(name="Red Hat ENterprise Linux Server", orderNo=12345, cNo=152341643, qUsed=4, quantity=100).toX509Extn
+          Order(name="Red Hat ENterprise Linux Server", orderNo=12345, cNo=152341643, qUsed=4, quantity=100, warningPeriod=0).toX509Extn
           ++= new System(java.util.UUID.randomUUID.toString).toX509Extn
           ++ Product(8251, "Red Hat Enterprise Linux", "Server", "x86_64", "6.0").toX509Extn
           ++= Content(789, "yum", " Red Hat Enterprise Linux (Supplementary)",
