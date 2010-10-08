@@ -13,12 +13,19 @@ object DrawUtils{
     import com.redhat.certgen.{Node, N}
     implicit def gceToNode(gce: GenericCertificateEntity) = new ToNode{
       override def toNode(all: Boolean = false): Node = {
-	val fields = if(all) gce.fields else gce.fields.filter(gce \ _ != None)
-	N(gce.symbol.name, fields.map {field => gce \ field match{
-	  case Some(value) =>  N(field.name + " = " + value)
-	  case None => N(field.name)
-          }
-        }.iterator)
+        val fields = if(all) gce.fields else gce.fields.filter(gce \ _ != None)
+        val children = fields.map {
+              field => gce \ field match{
+                case Some(value) =>  N(field.name + " = " + value)
+                case None => N(field.name)
+              }
+        }
+      if(gce.symbol == 'Product){
+        val ns = gce.namespace
+        N(gce.symbol.name, (N("id = " + ns.substring(ns.lastIndexOf(".")+1)) +: children).iterator)
+      }else{
+        N(gce.symbol.name, children.iterator)
+        }
       }
     }
     implicit def certToNode(c: Certificate) = new ToNode{
