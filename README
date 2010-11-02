@@ -4,8 +4,11 @@ Certificate Generation/Modification
    
    PRE-REQUISITES:
    --------------
-	Install buildr and run buildr package before you start using 'cert-gen.sh'. 
-
+	Install buildr (using 'gem install buildr') and run 'buildr package' to build the project.
+        
+	If you have buildr version < 1.4, you will need the following workaround:
+           Edit /usr/lib/ruby/gems/1.8/gems/buildr-{version}/lib/buildr/scala/compiler.rb
+           and change line with 'DEFAULT_VERSION' to:  DEFAULT_VERSION = '2.8.0.RC6'
 
    FEATURES:
    ---------
@@ -20,7 +23,7 @@ Certificate Generation/Modification
    ------
 	First, start the program using the following command
 	       ./cert-gen.sh <existing certificate.pem>
-	If you see any class not found exception, probably you forgot to run buildr package.
+	If you see any class not found exception, probably you forgot to run 'buildr package'.
 	Also, if you believe cert-gen is not working properly;
 	      look into the logs /tmp/certgen.log
 
@@ -170,7 +173,7 @@ Content
    FUTURE GOALS:
    ------------
     *) Support xpath kind of editing.
-    *) Refractor code to remove stupid hacks
+    *) Refactor code to remove stupid hacks
     *) Allow more customization
     *) Try to make the code into highly generic 'object editing framework'
     
